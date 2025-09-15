@@ -1,0 +1,2376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cold Storage Monitoring Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color:#1c2a3e;
+            --text-color: #212529;
+            --section-bg: #ffffff;
+            --border-color: #e9ecef;
+            --input-bg: #f1f3f5;
+            --input-border: #ced4da;
+            --subtle-text: #6c757d;
+            --shadow-color: rgba(0,0,0,0.06);
+            --room-bg: rgba(255,255,255,0.4);
+            --primary-blue: #3B82F6;
+            --primary-blue-dark: #2563EB;
+        }
+
+        body.dark-mode {
+            --bg-color: #111827;
+            --text-color: #e0e0e0;
+            --section-bg: #1F2937;
+            --border-color: #374151;
+            --input-bg: #374151;
+            --input-border: #4B5563;
+            --subtle-text: #9CA3AF;
+            --shadow-color: rgba(0,0,0,0.2);
+            --room-bg: rgba(0,0,0,0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* --- Updated Login Page Styles --- */
+        #login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            background: linear-gradient(135deg, #1c2a3e, #0f172a);
+            overflow: hidden;
+        }
+        
+        .login-box {
+            position: relative;
+            z-index: 2;
+            background: #1F2937;
+            border: 1px solid #374151;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            color: #fff;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+
+        .form-section h3 {
+            color: #3B82F6;
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .auth-switch {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .auth-switch p {
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+
+        .auth-switch a {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-box h2 {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .login-box p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1em;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #login-btn, #register-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-blue);
+            color: white;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        #login-btn:hover, #register-btn:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-2px);
+        }
+
+        #login-error {
+            color: #ffbaba;
+            background: rgba(220, 53, 69, 0.3);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            border-radius: 6px;
+            margin-top: 15px;
+            padding: 10px;
+            font-weight: 500;
+            min-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #login-error.show {
+            opacity: 1;
+        }
+
+
+        /* --- Dashboard Styles --- */
+        #dashboard-container {
+            display: none; /* Hidden by default */
+        }
+        
+        .header {
+            background: var(--bg-color);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            padding: 0 20px;
+            background: var(--section-bg);
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab-link {
+            background: none;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--subtle-text);
+            transition: color 0.3s ease, border-bottom 0.3s ease;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-link:hover {
+            color: var(--primary-blue);
+        }
+
+        .tab-link.active {
+            color: var(--primary-blue);
+            border-bottom: 3px solid var(--primary-blue);
+        }
+
+        .owner-details {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--subtle-text);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 15px;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: var(--input-bg);
+            font-size: 0.9em;
+        }
+        
+        .system-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse-led 2s infinite;
+        }
+        
+        .led-online {  
+            background-color: #28a745;  
+            box-shadow: 0 0 10px #28a745;
+        }
+        .led-offline {  
+            background-color: #dc3545;  
+            box-shadow: 0 0 10px #dc3545;
+        }
+
+        @keyframes pulse-led {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .real-time-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: var(--input-bg);
+            font-size: 0.9em;
+        }
+
+        .temp-display, .humidity-display {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+        
+        .safe { background-color: #28a745; }
+        .alert { background-color: #dc3545; }
+        .warning { background-color: #ffc107; }
+        
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .tab-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .section {
+            background: var(--section-bg);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .section h2 {
+            margin-bottom: 20px;
+            color: var(--text-color);
+            font-size: 1.5em;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        /* Date Range Selector */
+        .date-range-selector {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 15px 25px;
+            gap: 20px;
+        }
+
+        .range-buttons, .custom-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .range-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--subtle-text);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .range-btn:hover {
+            background: var(--border-color);
+        }
+
+        .range-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .custom-range input[type="date"] {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+        /* End Date Range Selector */
+
+        .charts-container {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .chart-wrapper {
+            background: transparent;
+            border-radius: 8px;
+            padding: 10px;
+            height: 350px;
+        }
+        
+        /* --- Original Layout Styles --- */
+        .map-container {
+            position: relative;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 450px;
+            overflow: hidden;
+        }
+        
+        .cold-storage-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .room {
+            position: absolute;
+            border: 2px solid var(--subtle-text);
+            background: var(--room-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9em;
+            border-radius: 4px;
+        }
+        
+        .room:hover {
+            background: rgba(0, 123, 255, 0.1);
+            border-color: #007bff;
+        }
+        
+        .room-hall-a { top: 5%; left: 5%; width: 42%; height: 42%; }
+        .room-hall-b { top: 5%; right: 5%; width: 42%; height: 42%; }
+        .room-loading { bottom: 5%; left: 5%; width: 42%; height: 42%; }
+        .room-control { bottom: 5%; right: 5%; width: 42%; height: 42%; }
+        
+        .sensor {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(0.8); }
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .device-card {
+            background: var(--input-bg);
+            border-radius: 6px;
+            padding: 20px;
+            border-left: 4px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .device-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        
+        .device-safe { border-left-color: #28a745; }
+        .device-alert { border-left-color: #dc3545; }
+        .device-warning { border-left-color: #ffc107; }
+        
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .device-name {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        
+        .device-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .status-safe { background: #28a745; color: white; }
+        .status-alert { background: #dc3545; color: white; }
+        .status-warning { background: #ffc107; color: #212529; }
+        
+        .device-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 10px;
+            background: var(--input-bg);
+            border-radius: 5px;
+        }
+        
+        .metric-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            color: var(--subtle-text);
+        }
+        
+        .gas-sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .alerts-panel {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid;
+            background: var(--input-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .alert-content {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        .alert-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-delete-btn {
+            background: var(--subtle-text);
+            color: var(--section-bg);
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            transition: background 0.2s ease;
+        }
+
+        .alert-delete-btn:hover {
+            background: var(--text-color);
+        }
+
+        .alert-critical { border-left-color: #dc3545; }
+        .alert-warning { border-left-color: #ffc107; }
+        .alert-info { border-left-color: var(--primary-blue); }
+        
+        .alert-time {
+            font-size: 0.75em;
+            color: var(--subtle-text);
+            margin-bottom: 5px;
+        }
+        
+        .top-bar-left {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .top-bar-right {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .language-switcher {
+            display: flex;
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .lang-btn {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--subtle-text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .lang-btn.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        #theme-toggle, #logout-btn-ui {
+            background: var(--section-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease, transform 0.2s ease;
+            padding: 0;
+        }
+
+        #theme-toggle:hover, #logout-btn-ui:hover {
+            transform: scale(1.1);
+        }
+        
+        .date-time-container {
+            background: var(--section-bg);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        #currentDate {
+            font-size: 0.8em;
+            color: var(--subtle-text);
+            line-height: 1.2;
+        }
+        
+        #currentTime {
+            font-size: 1em;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--primary-blue);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--section-bg);
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+            text-align: left;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 15px;
+            font-size: 1.6em;
+            text-align: center;
+        }
+        
+        .modal-content p, .modal-content ul {
+            font-size: 1em;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .modal-footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .modal-close-btn, .gemini-btn {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin: 0 5px;
+        }
+        
+        .gemini-btn {
+            background: var(--primary-blue);
+        }
+        
+        .gemini-btn:hover {
+            transform: translateY(-2px);
+            background: var(--primary-blue-dark);
+        }
+        
+        .modal-close-btn {
+            background: #6c757d;
+        }
+
+        .modal-close-btn:hover {
+            background: #5a6268;
+        }
+        
+        #modalAIContent {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+            display: none;
+        }
+        
+        /* AI Section */
+        .ai-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        /* Spinner for loading state */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-blue);
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Godown Map Styles */
+        .godown-map-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: var(--input-bg);
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 500px;
+        }
+
+        .godown-map {
+            display: grid;
+            flex-grow: 1;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .godown-stack {
+            background-color: #28a745;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s;
+        }
+        
+        .godown-stack.stack-warning {
+            background-color: #ffc107;
+            color: #212529;
+            border-color: #ffc107;
+            animation: pulse-amber-bg 1.5s infinite;
+        }
+
+        .godown-stack.stack-alert {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            animation: pulse-red-bg 1.5s infinite;
+        }
+
+        @keyframes pulse-red-bg {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+        
+        @keyframes pulse-amber-bg {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+
+        #stack-A1 { grid-area: 1 / 1 / 2 / 2; }
+        #stack-A2 { grid-area: 1 / 2 / 2 / 3; }
+        #stack-A3 { grid-area: 1 / 3 / 2 / 4; }
+        #stack-A4 { grid-area: 1 / 4 / 2 / 5; }
+        #stack-B1 { grid-area: 2 / 1 / 3 / 2; }
+        #stack-B2 { grid-area: 2 / 2 / 3 / 3; }
+        #stack-B3 { grid-area: 2 / 3 / 3 / 4; }
+        #stack-B4 { grid-area: 2 / 4 / 3 / 5; }
+
+
+        .godown-map-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 0.9em;
+            padding-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+
+        /* --- Footer Styles --- */
+        .footer {
+            background: linear-gradient(135deg, #0b2548, #0f224e);
+            border-top: 2px solid var(--primary-blue);
+            margin-top: 40px;
+            color: #ffffff;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            padding: 40px 0;
+        }
+
+        .footer-section h3 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer-section h4 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer-section p {
+            color: #e5e7eb;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .logo-icon {
+            font-size: 1.5em;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #e5e7eb;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+
+        .contact-item:hover {
+            color: var(--primary-blue);
+        }
+
+        .contact-icon {
+            font-size: 1.1em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .contact-item a {
+            color: #e5e7eb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .contact-item a:hover {
+            color: var(--primary-blue);
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: #e5e7eb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 400;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-blue);
+        }
+
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .social-icon img {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .social-link:hover {
+            background: var(--primary-blue);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .social-icon {
+            font-size: 1.2em;
+            width: 20px;
+            text-align: center;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border-color);
+            padding: 20px 0;
+        }
+
+        .footer-bottom-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .footer-bottom p {
+            margin: 0;
+            color: #e5e7eb;
+            font-size: 0.9em;
+            font-weight: 400;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .footer-bottom-links a {
+            color: #e5e7eb;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.3s ease;
+            font-weight: 400;
+        }
+
+        .footer-bottom-links a:hover {
+            color: var(--primary-blue);
+        }
+
+         @media (max-width: 768px) {
+             .dashboard {
+                 grid-template-columns: 1fr;
+             }
+             .charts-container {
+                 grid-template-columns: 1fr;
+             }
+             .top-bar-left {
+                 top: 10px;
+                 left: 10px;
+             }
+             .top-bar-right {
+                 top: 10px;
+                 right: 10px;
+             }
+             .header h1 {
+                 font-size: 1.5em;
+             }
+             .footer-content {
+                 grid-template-columns: 1fr;
+                 gap: 30px;
+                 padding: 30px 0;
+             }
+             .footer-bottom-content {
+                 flex-direction: column;
+                 text-align: center;
+             }
+             .social-links {
+                 flex-direction: row;
+                 flex-wrap: wrap;
+                 justify-content: center;
+             }
+             .social-link {
+                 flex: 1;
+                 min-width: 120px;
+                 justify-content: center;
+             }
+         }
+    </style>
+</head>
+<body>
+    <!-- Login and Registration Page -->
+    <div id="login-container">
+        <div class="login-box" id="login-form">
+              <div class="login-header">
+                <h2 data-lang-key="loginTitle">System Login</h2>
+                <p>Onion Storage Management</p>
+            </div>
+            <div class="input-group">
+                <label for="username" data-lang-key="usernameLabel">Username</label>
+                <input type="text" id="username" placeholder="Enter username">
+            </div>
+            <div class="input-group">
+                <label for="password" data-lang-key="passwordLabel">Password</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            <button id="login-btn" data-lang-key="loginButton">Login</button>
+            <p id="login-error"></p>
+            <div class="auth-switch">
+                <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
+            </div>
+        </div>
+
+        <div class="login-box" id="register-form" style="display: none;">
+            <div class="login-header">
+                <h2>Create New Account</h2>
+                <p>Join Cold Storage Management System</p>
+            </div>
+            
+            <form id="registration-form">
+                <div class="form-section">
+                    <h3>Personal Information</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="reg-firstname">First Name *</label>
+                            <input type="text" id="reg-firstname" name="firstname" placeholder="Enter first name" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="reg-lastname">Last Name *</label>
+                            <input type="text" id="reg-lastname" name="lastname" placeholder="Enter last name" required>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="reg-email">Email Address *</label>
+                            <input type="email" id="reg-email" name="email" placeholder="Enter email address" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="reg-phone">Phone Number *</label>
+                            <input type="tel" id="reg-phone" name="phone" placeholder="+91 9876543210" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Address Information</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="reg-city">City *</label>
+                            <input type="text" id="reg-city" name="city" placeholder="Enter city" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="reg-pincode">PIN Code *</label>
+                            <input type="text" id="reg-pincode" name="pincode" placeholder="Enter PIN code" pattern="[0-9]{6}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Facility Information</h3>
+                    <div class="input-group">
+                        <label for="reg-storage-area">Total Storage Area (in sq. ft.) *</label>
+                        <input type="number" id="reg-storage-area" name="storageArea" placeholder="e.g., 5000" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Account Information</h3>
+                    <div class="input-group">
+                        <label for="reg-username">Username *</label>
+                        <input type="text" id="reg-username" name="username" placeholder="Choose username (min 3 characters)" minlength="3" required>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="reg-password">Password *</label>
+                            <input type="password" id="reg-password" name="password" placeholder="Create password (min 8 characters)" minlength="8" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="reg-confirm-password">Confirm Password *</label>
+                            <input type="password" id="reg-confirm-password" name="confirmPassword" placeholder="Confirm password" required>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="register-btn" type="submit">Create Account</button>
+                <div id="register-error" style="display: none; color: #ef4444; margin-top: 10px; padding: 10px; border-radius: 4px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);"></div>
+                <div id="register-success" style="display: none; color: #10b981; margin-top: 10px; padding: 10px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);"></div>
+            </form>
+            
+            <div class="auth-switch">
+                <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <main id="dashboard-container">
+        <div class="top-bar-left">
+            <div class="language-switcher">
+                <button id="lang-en" class="lang-btn">EN</button>
+                <button id="lang-hi" class="lang-btn">HI</button>
+            </div>
+            <button id="theme-toggle">🌙</button>
+        </div>
+        <div class="top-bar-right">
+            <div class="date-time-container">
+                  <div id="currentDate"></div>
+                  <div id="currentTime"></div>
+            </div>
+            <button id="logout-btn-ui" title="Logout">🚪</button>
+        </div>
+        
+        <header class="header">
+            <h1 data-lang-key="dashboardTitle">Cold Storage Monitoring</h1>
+            <div class="owner-details">
+                <span data-lang-key="owner">Owner</span>: Champapur Cold Storage | <span data-lang-key="gstNo">GST No</span>: 10ABCDE1234F1Z5
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="system-led led-online" id="system-led"></div>
+                    <span>System Status</span>
+                </div>
+                <div class="real-time-display">
+                    <div class="temp-display">
+                        <span>🌡️</span>
+                        <span id="currentTemp">27.5°C</span>
+                    </div>
+                    <div class="humidity-display">
+                        <span>💧</span>
+                        <span id="currentHumidity">68%</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-link active" onclick="openTab(event, 'Overview')" data-lang-key="overviewTab">📊 Overview</button>
+            <button class="tab-link" onclick="openTab(event, 'GodownMap')" data-lang-key="godownMapTab">🗺️ Godown Map</button>
+            <button class="tab-link" onclick="openTab(event, 'Environment')" data-lang-key="environmentTab">🌡️ Environment</button>
+            <button class="tab-link" onclick="openTab(event, 'Equipment')" data-lang-key="equipmentTab">🔧 Equipment</button>
+            <button class="tab-link" onclick="openTab(event, 'AI')" data-lang-key="aiTab">✨ AI Assistant</button>
+        </div>
+
+        <div class="dashboard">
+            <div id="Overview" class="tab-content">
+                <div class="section date-range-selector">
+                    <div class="range-buttons">
+                        <button id="range-live" class="range-btn active" data-lang-key="rangeLive">Live (24h)</button>
+                        <button id="range-7d" class="range-btn" data-lang-key="range7d">Last 7 Days</button>
+                        <button id="range-30d" class="range-btn" data-lang-key="range30d">Last 30 Days</button>
+                    </div>
+                    <div class="custom-range">
+                        <input type="date" id="start-date">
+                        <span data-lang-key="rangeTo">to</span>
+                        <input type="date" id="end-date">
+                        <button id="range-go" class="gemini-btn" data-lang-key="rangeGo">Go</button>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="section">
+                        <h2 data-lang-key="tempTrend">Temperature Trend</h2>
+                        <div class="chart-wrapper">
+                            <canvas id="temperatureChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h2 data-lang-key="humidityTrend">Humidity Trend</h2>
+                        <div class="chart-wrapper">
+                            <canvas id="humidityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 data-lang-key="layout">Cold Storage Layout</h2>
+                    <div class="map-container">
+                        <div class="cold-storage-map">
+                            <div class="room room-hall-a" onclick="showRoomDetails('Storage Hall A', 'hall_a')">
+                                <div><span data-lang-key="roomHallA">STORAGE HALL A</span><br><span id="temp-hall_a">28°C</span></div>
+                                <div class="sensor safe" style="top: 15%; left: 15%;"></div>
+                                <div class="sensor safe" style="bottom: 15%; right: 15%;"></div>
+                            </div>
+                            <div class="room room-hall-b" onclick="showRoomDetails('Storage Hall B', 'hall_b')">
+                                <div><span data-lang-key="roomHallB">STORAGE HALL B</span><br><span id="temp-hall_b">27°C</span></div>
+                                <div class="sensor warning" style="top: 15%; right: 15%;"></div>
+                                <div class="sensor safe" style="bottom: 15%; left: 15%;"></div>
+                            </div>
+                            <div class="room room-loading" onclick="showRoomDetails('Loading Bay', 'loading')">
+                                <div><span data-lang-key="roomLoading">LOADING BAY</span><br><span id="temp-loading">29°C</span></div>
+                                <div class="sensor safe" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                            </div>
+                            <div class="room room-control" onclick="showRoomDetails('Control Room', 'control')">
+                                <div><span data-lang-key="roomControl">CONTROL ROOM</span><br><span id="temp-control">25°C</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 data-lang-key="alerts">System Alerts</h2>
+                    <div class="alerts-panel" id="alertsPanel">
+                        <!-- Alerts will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="GodownMap" class="tab-content" style="display: none;">
+                <div class="section" style="grid-column: 1 / -1;">
+                    <h2 data-lang-key="godownMapTitle">Godown Map & Gas Sensor Status</h2>
+                    <div class="godown-map-container">
+                        <div class="godown-map" id="godown-map-grid">
+                            <!-- Stacks are generated by JS -->
+                        </div>
+                        <div class="godown-map-legend">
+                            <!-- Legend is generated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="Environment" class="tab-content" style="display: none;">
+                <div class="section" style="grid-column: 1 / -1;">
+                    <h2 data-lang-key="gasReadings">Gas Sensor Readings</h2>
+                    <div class="gas-sensor-grid">
+                        <div class="metric">
+                            <div class="metric-value" id="gas-ammonia">0.5 PPM</div>
+                            <div class="metric-label" data-lang-key="gasAmmonia">Ammonia (NH3)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="gas-ethylene">0.1 PPM</div>
+                            <div class="metric-label" data-lang-key="gasEthylene">Ethylene (C2H4)</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="gas-co2">450 PPM</div>
+                            <div class="metric-label" data-lang-key="gasCO2">CO2 Level</div>
+                        </div>
+                        <div class="metric">
+                            <div id="gas-status-indicator" class="device-status status-safe" style="width: 100%; text-align: center; padding: 10px 0; height: auto; line-height: 1.5em;" data-lang-key="statusSafe">Safe</div>
+                            <div class="metric-label" data-lang-key="atmosphere">Atmosphere</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="AI" class="tab-content" style="display: none;">
+                <div class="section" style="grid-column: 1 / -1;">
+                    <h2 data-lang-key="aiAssistant">✨ AI Assistant</h2>
+                    <p style="text-align: center; margin-bottom: 25px; color: var(--subtle-text);" data-lang-key="aiDescription">Your intelligent assistant for operational insights.</p>
+                    <div class="ai-actions">
+                        <button class="gemini-btn" onclick="generateWeeklyReport()" data-lang-key="aiBtnReport">Generate Weekly Report</button>
+                        <button class="gemini-btn" onclick="getOnionStorageAdvice()" data-lang-key="aiBtnOnion">🧅 Get Onion Storage Advice</button>
+                        <button class="gemini-btn" onclick="getProactiveSuggestions()" data-lang-key="aiBtnMaintenance">Get Maintenance Tips</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="Equipment" class="tab-content" style="display: none;">
+                <div class="section" style="grid-column: 1 / -1;">
+                    <h2 data-lang-key="equipmentStatus">Equipment Status</h2>
+                    <div class="devices-grid" id="devicesGrid"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal for Room Details and Gemini Responses -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Details</h3>
+            <div id="modalBody">
+                <!-- Content will be injected by JS -->
+            </div>
+            <div id="modalAIContent"></div>
+            <div class="modal-footer">
+                <button class="gemini-btn" id="modalAIButton" style="display: none;" data-lang-key="getAISummary">Get AI Summary</button>
+                <button class="modal-close-btn" onclick="closeModal()" data-lang-key="close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL VARIABLES & CONFIG ---
+        let tempCtx, humidityCtx, temperatureChart, humidityChart;
+        const timeLabels = [], tempData = [], humidityData = [];
+        let equipmentData = [];
+        let allHistoricalAlerts = [];
+        let stackStatusData = {};
+        let gasAlertTriggered = false;
+        let timeUpdateInterval, dataUpdateInterval, gasUpdateInterval, equipmentUpdateInterval, stackStatusUpdateInterval;
+        let stackIds = [];
+        let simulatedDate;
+
+        let loginContainer, dashboardContainer, loginError, infoModal, modalTitle, modalBody, body;
+
+        // --- DATABASE & DATA FUNCTIONS ---
+        function saveUserToDatabase(userData) {
+            const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            users.push(userData);
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+        }
+
+        function getUserFromDatabase(username, password) {
+            const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            return users.find(user => user.username === username && user.password === password);
+        }
+
+        function isUsernameExists(username) {
+            const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            return users.some(user => user.username === username);
+        }
+
+        function isEmailExists(email) {
+            const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            return users.some(user => user.email === email);
+        }
+
+        function generateInitialEquipmentData() {
+             equipmentData = [
+                { name: "Ventilation Unit 1", status: "safe", power: "5.5 kW", efficiency: "98%", temperature: "28°C", runtime: "22h 10m" },
+                { name: "Ventilation Unit 2", status: "safe", power: "5.6 kW", efficiency: "97%", temperature: "27°C", runtime: "23h 05m" },
+                { name: "Exhaust Fan 1", status: "warning", power: "1.1 kW", efficiency: "92%", temperature: "N/A", runtime: "18h 12m" },
+                { name: "Exhaust Fan 2", status: "safe", power: "1.2 kW", efficiency: "99%", temperature: "N/A", runtime: "20h 48m" },
+                { name: "Backup Generator", status: "safe", power: "0 kW", efficiency: "N/A", temperature: "25°C", runtime: "0h 00m" },
+                { name: "Humidity Control Unit", status: "safe", power: "2.5 kW", efficiency: "96%", temperature: "N/A", runtime: "15h 30m" }
+            ];
+        }
+
+        // --- AUTH & PAGE NAVIGATION ---
+        function handleRegistration() {
+            const registerError = document.getElementById('register-error');
+            const registerSuccess = document.getElementById('register-success');
+            const registerBtn = document.getElementById('register-btn');
+            
+            registerError.style.display = 'none';
+            registerSuccess.style.display = 'none';
+            
+            const formData = new FormData(document.getElementById('registration-form'));
+            const data = Object.fromEntries(formData);
+            
+            const errors = [];
+            const requiredFields = ['firstname', 'lastname', 'email', 'phone', 'city', 'pincode', 'storageArea', 'username', 'password', 'confirmPassword'];
+            requiredFields.forEach(field => {
+                if (!data[field] || String(data[field]).trim() === '') {
+                    const fieldName = field.replace(/([A-Z])/g, ' $1').toLowerCase();
+                    errors.push(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+                }
+            });
+
+            if (isUsernameExists(data.username)) errors.push('Username already exists.');
+            if (isEmailExists(data.email)) errors.push('Email already registered.');
+            if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.push('Invalid email address.');
+            if (data.phone && !/^[\+]?[1-9][\d]{9,14}$/.test(data.phone.replace(/[\s\-\(\)]/g, ''))) errors.push('Invalid phone number.');
+            if (data.password && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(data.password)) errors.push('Password must be 8+ chars with uppercase, lowercase, & number.');
+            if (data.password !== data.confirmPassword) errors.push('Passwords do not match.');
+            if (data.pincode && !/^[0-9]{6}$/.test(data.pincode)) errors.push('Invalid 6-digit PIN code.');
+            if (data.storageArea && (isNaN(data.storageArea) || Number(data.storageArea) <= 0)) errors.push('Please enter a valid storage area.');
+
+            if (errors.length > 0) {
+                registerError.innerHTML = '<strong>Please fix the errors:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>';
+                registerError.style.display = 'block';
+                return;
+            }
+            
+            registerBtn.textContent = 'Creating Account...';
+            registerBtn.disabled = true;
+            
+            setTimeout(() => {
+                const userData = { ...data };
+                delete userData.confirmPassword;
+                userData.registrationDate = new Date().toISOString();
+
+                saveUserToDatabase(userData);
+                
+                registerSuccess.innerHTML = `<strong>Registration Successful!</strong><br>Welcome ${data.firstname}! You can now login with username: <strong>${data.username}</strong>`;
+                registerSuccess.style.display = 'block';
+                
+                document.getElementById('registration-form').reset();
+                registerBtn.textContent = 'Create Account';
+                registerBtn.disabled = false;
+                
+                setTimeout(() => {
+                    document.getElementById('register-form').style.display = 'none';
+                    document.getElementById('login-form').style.display = 'block';
+                    document.getElementById('username').value = data.username;
+                }, 3000);
+            }, 1500);
+        }
+
+        function showDashboard() {
+            loginError.textContent = '';
+            loginError.classList.remove('show');
+            loginContainer.style.opacity = '0';
+            loginContainer.style.visibility = 'hidden';
+
+            setTimeout(() => {
+                loginContainer.style.display = 'none';
+                dashboardContainer.style.display = 'block';
+                initializeDashboard();
+            }, 500);
+        }
+
+        function handleLogin() {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            if (username === 'xyz' && password === '1234') {
+                showDashboard();
+            } else {
+                loginError.textContent = 'Invalid credentials. Please try again.';
+                loginError.classList.add('show');
+            }
+        }
+
+        function handleLogout() {
+            stopDataSimulation();
+            dashboardContainer.style.display = 'none';
+            loginContainer.style.display = 'flex';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            setTimeout(() => {
+                 loginContainer.style.opacity = '1';
+                 loginContainer.style.visibility = 'visible';
+            }, 10);
+        }
+
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+            const tablinks = document.getElementsByClassName("tab-link");
+            for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+            document.getElementById(tabName).style.display = "grid";
+            evt.currentTarget.className += " active";
+        }
+
+        // --- TRANSLATION & THEME ---
+        const translations = {
+            en: {
+                loginTitle: "System Login", usernameLabel: "Username", passwordLabel: "Password", loginButton: "Login",
+                dashboardTitle: "Onion Storage Monitoring", owner: "Owner", gstNo: "GST No", systemOnline: "System Online", environment: "Environment",
+                overviewTab: "📊 Overview", godownMapTab: "🗺️ Godown Map", environmentTab: "🌡️ Environment", equipmentTab: "🔧 Equipment", aiTab: "✨ AI Assistant",
+                tempTrend: "Temperature Trend", humidityTrend: "Humidity Trend", layout: "Storage Layout", alerts: "System Alerts",
+                rangeLive: "Live (24h)", range7d: "Last 7 Days", range30d: "Last 30 Days", rangeTo: "to", rangeGo: "Go",
+                roomHallA: "STORAGE HALL A", roomHallB: "STORAGE HALL B", roomLoading: "LOADING BAY", roomControl: "CONTROL ROOM",
+                godownMapTitle: "Godown Map & Status", legendSafe: "Safe", legendWarning: "Sprouting", legendAlert: "Bad Condition",
+                gasReadings: "Gas Sensor Readings", gasAmmonia: "Ammonia (NH3)", gasEthylene: "Ethylene (C2H4)", gasCO2: "CO2 Level", atmosphere: "Atmosphere",
+                equipmentStatus: "Equipment Status", metricPower: "Power", metricEfficiency: "Efficiency", metricTemp: "Temperature", metricRuntime: "Runtime",
+                modalApplianceStatus: "Appliance Status", detailStatus: "Status", detailRuntime: "Runtime", detailPower: "Power", detailEfficiency: "Efficiency", detailLastMaint: "Last Maintenance", detailMaintReq: "Maintenance Required",
+                aiAssistant: "✨ AI Assistant", aiDescription: "Your intelligent assistant for operational insights.", aiBtnReport: "Generate Weekly Report", aiBtnOnion: "🧅 Get Onion Storage Advice", aiBtnMaintenance: "Get Maintenance Tips",
+                getAISummary: "Get AI Summary", close: "Close", analyze: "Analyze",
+                statusSafe: "Safe", statusWarning: "Warning", statusAlert: "Alert",
+                alert_temp_rising: "{deviceName}: Temp rising above optimal range.",
+                alert_maintenance_done: "{deviceName}: Maintenance completed.",
+                alert_power_spike: "{deviceName}: Power spike detected.",
+                alert_status_change: "{deviceName} status changed to {status}.",
+                alert_gas_in_stack: "Bad Condition: High gas levels in {deviceName}!",
+                alert_sprouting_detected: "Warning: Sprouting detected in {deviceName}!",
+                alert_gas_high_nh3: "{deviceName}: High Ammonia (NH3) detected!",
+                alert_gas_high_c2h4: "{deviceName}: High Ethylene (C2H4) detected!",
+                alert_gas_normal: "{deviceName}: Gas levels returned to normal."
+            },
+            hi: {
+                loginTitle: "सिस्टम लॉगिन", usernameLabel: "उपयोगकर्ता नाम", passwordLabel: "पासवर्ड", loginButton: "लॉगिन करें",
+                dashboardTitle: "प्याज भंडारण की निगरानी", owner: "मालिक", gstNo: "जीएसटी नंबर", systemOnline: "सिस्टम ऑनलाइन", environment: "पर्यावरण",
+                overviewTab: "📊 अवलोकन", godownMapTab: "🗺️ गोदाम नक्शा", environmentTab: "🌡️ पर्यावरण", equipmentTab: "🔧 उपकरण", aiTab: "✨ एआई सहायक",
+                tempTrend: "तापमान ट्रेंड", humidityTrend: "आर्द्रता ट्रेंड", layout: "भंडारण लेआउट", alerts: "सिस्टम अलर्ट",
+                rangeLive: "लाइव (24 घंटे)", range7d: "पिछले 7 दिन", range30d: "पिछले 30 दिन", rangeTo: "से", rangeGo: "जाएँ",
+                roomHallA: "भंडारण हॉल ए", roomHallB: "भंडारण हॉल बी", roomLoading: "लोडिंग बे", roomControl: "नियंत्रण कक्ष",
+                godownMapTitle: "गोदाम नक्शा और स्थिति", legendSafe: "सुरक्षित", legendWarning: "अंकुरण", legendAlert: "खराब स्थिति",
+                gasReadings: "गैस सेंसर रीडिंग", gasAmmonia: "अमोनिया (NH3)", gasEthylene: "एथिलीन (C2H4)", gasCO2: "CO2 स्तर", atmosphere: "वायुमंडल",
+                equipmentStatus: "उपकरण स्थिति", metricPower: "पावर", metricEfficiency: "दक्षता", metricTemp: "तापमान", metricRuntime: "रनटाइम",
+                modalApplianceStatus: "उपकरण स्थिति", detailStatus: "स्थिति", detailRuntime: "रनटाइम", detailPower: "पावर", detailEfficiency: "दक्षता", detailLastMaint: "अंतिम रखरखाव", detailMaintReq: "रखरखाव आवश्यक है",
+                aiAssistant: "✨ एआई सहायक", aiDescription: "परिचालन संबंधी अंतर्दृष्टि के लिए आपका बुद्धिमान सहायक।", aiBtnReport: "साप्ताहिक रिपोर्ट तैयार करें", aiBtnOnion: "🧅 प्याज भंडारण सलाह प्राप्त करें", aiBtnMaintenance: "रखरखाव युक्तियाँ प्राप्त करें",
+                getAISummary: "एआई सारांश प्राप्त करें", close: "बंद करें", analyze: "विश्लेषण करें",
+                statusSafe: "सुरक्षित", statusWarning: "चेतावनी", statusAlert: "अलर्ट",
+                alert_temp_rising: "{deviceName}: तापमान इष्टतम सीमा से ऊपर बढ़ रहा है।",
+                alert_maintenance_done: "{deviceName}: रखरखाव पूरा हुआ।",
+                alert_power_spike: "{deviceName}: पावर स्पाइक का पता चला।",
+                alert_status_change: "{deviceName} की स्थिति {status} में बदल गई है।",
+                alert_gas_in_stack: "खराब स्थिति: {deviceName} में उच्च गैस स्तर!",
+                alert_sprouting_detected: "चेतावनी: {deviceName} में अंकुरण का पता चला!",
+                alert_gas_high_nh3: "{deviceName}: उच्च अमोनिया (NH3) का पता चला!",
+                alert_gas_high_c2h4: "{deviceName}: उच्च एथिलीन (C2H4) का पता चला!",
+                alert_gas_normal: "{deviceName}: गैस का स्तर सामान्य हो गया है।"
+            }
+        };
+
+        let currentLanguage = 'en';
+
+        function getTranslatedText(key, context = {}) {
+            let text = (translations[currentLanguage] && translations[currentLanguage][key]) || translations['en'][key] || key;
+            for (const placeholder in context) {
+                text = text.replace(`{${placeholder}}`, context[placeholder]);
+            }
+            return text;
+        }
+
+        function setLanguage(lang) {
+            if (!translations[lang]) return;
+            currentLanguage = lang;
+            localStorage.setItem('language', lang);
+
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.getAttribute('data-lang-key');
+                if (key) {
+                    el.textContent = getTranslatedText(key);
+                }
+            });
+
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('lang-hi').classList.toggle('active', lang === 'hi');
+            
+            if (dashboardContainer && dashboardContainer.style.display !== 'none') {
+                 renderEquipment();
+                 if (!document.getElementById('range-live').classList.contains('active')) {
+                      const panel = document.getElementById('alertsPanel');
+                      const currentAlerts = Array.from(panel.children).map(item => ({
+                          type: item.dataset.type,
+                          messageKey: item.dataset.messageKey,
+                          context: JSON.parse(item.dataset.context),
+                          timestamp: new Date(item.dataset.timestamp)
+                      }));
+                      renderAlerts(currentAlerts);
+                 }
+            }
+            updateTime();
+        }
+
+        function updateChartTheme() {
+            if (!temperatureChart || !humidityChart) return;
+            const isDark = body.classList.contains('dark-mode');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+            const tickColor = isDark ? '#adb5bd' : '#6c757d';
+
+            [temperatureChart, humidityChart].forEach(chart => {
+                if (chart) {
+                    chart.options.scales.x.ticks.color = tickColor;
+                    chart.options.scales.y.ticks.color = tickColor;
+                    chart.options.scales.y.grid.color = gridColor;
+                    chart.update('none');
+                }
+            });
+        }
+
+        function applyInitialSettings() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            } else {
+                themeToggle.textContent = '🌙';
+            }
+            const savedLang = localStorage.getItem('language') || 'en';
+            setLanguage(savedLang);
+        }
+
+        // --- GEMINI API INTEGRATION ---
+        async function callGeminiAPI(prompt, systemInstruction) {
+            const apiKey = ""; // IMPORTANT: Add your Gemini API Key here
+            if (!apiKey) return "API Key is missing. Please add your Gemini API key in the script to enable this feature.";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const languageInstruction = currentLanguage === 'hi' ? "Please provide the entire response exclusively in Hindi, using Devanagari script." : "Please provide the entire response exclusively in English.";
+            const finalPrompt = `${prompt}\n\n${languageInstruction}`;
+            const payload = { contents: [{ parts: [{ text: finalPrompt }] }] };
+            if (systemInstruction) payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) { console.error("API Error Response:", await response.text()); return `Error: Received status code ${response.status} from the API.`; }
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                if (candidate?.content?.parts?.[0]?.text) return candidate.content.parts[0].text;
+                else { console.error("Unexpected API response structure:", result); return "Error: Could not extract a valid response from the API."; }
+            } catch (error) { console.error("Error calling Gemini API:", error); return `An error occurred while contacting the AI assistant: ${error.message}`; }
+        }
+
+        async function getOnionStorageAdvice() {
+            showModal("🧅 AI Onion Storage Advisor", '<div class="spinner"></div>');
+            const systemPrompt = "You are an agricultural expert specializing in post-harvest onion storage. You will receive the current health status of onions in a cold storage facility. Your task is to provide actionable advice to maintain quality and prevent spoilage. Format your response with markdown, using simple headings and bullet points for clarity.";
+            const userPrompt = `Based on our facility's current conditions (Temp: ${document.getElementById('currentTemp').textContent}, Humidity: ${document.getElementById('currentHumidity').textContent}), please provide practical advice on how to adjust storage conditions (temperature, humidity, airflow) to optimize onion health and longevity.`;
+            const advice = await callGeminiAPI(userPrompt, systemPrompt);
+            updateModalBody(advice);
+        }
+
+        async function analyzeAlert(deviceName, alertMessage) {
+            showModal(`${getTranslatedText('analyze')} Alert: ${deviceName}`, '<div class="spinner"></div>');
+            const systemPrompt = "You are an expert AI assistant for a cold storage facility's monitoring system. Your role is to analyze alerts and provide clear, actionable advice for technicians. Format your response with markdown, using headings and bullet points.";
+            const userPrompt = `An alert has been triggered for the device "${deviceName}". The alert message is: "${alertMessage}". Based on this information, provide: 1. **Potential Causes:** (List 2-3 likely reasons). 2. **Action Plan:** (Provide a step-by-step checklist for a technician to follow). 3. **Risk Assessment:** (Briefly explain the risk if this issue is ignored).`;
+            const analysis = await callGeminiAPI(userPrompt, systemPrompt);
+            updateModalBody(analysis);
+        }
+
+        async function getProactiveSuggestions() {
+            showModal("✨ AI Maintenance Advisor", '<div class="spinner"></div>');
+            const equipmentStatus = JSON.stringify(equipmentData, null, 2);
+            const systemPrompt = "You are an expert AI maintenance advisor for a cold storage facility. You will be given the current status of all major equipment in JSON format. Your task is to identify potential future issues and suggest proactive maintenance tasks. Focus on preventing downtime and improving efficiency. Format your response with markdown.";
+            const userPrompt = `Here is the current status of our cold storage equipment: \n${equipmentStatus}\n\nBased on this data, please provide a list of 2-3 proactive maintenance suggestions. For each suggestion, specify the equipment, the reason for the suggestion (e.g., 'high runtime', 'low efficiency'), and the recommended action.`;
+            const suggestions = await callGeminiAPI(userPrompt, systemPrompt);
+            updateModalBody(suggestions);
+        }
+        
+        async function generateWeeklyReport() {
+            showModal("✨ Generating Weekly Report...", '<div class="spinner"></div>');
+            const equipmentStatus = JSON.stringify(equipmentData, null, 2);
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const weeklyAlerts = allHistoricalAlerts.filter(alert => new Date(alert.timestamp) >= oneWeekAgo);
+            const alertsText = weeklyAlerts.length > 0 ? weeklyAlerts.map(alertData => getTranslatedText(alertData.messageKey, alertData.context)).join('\n - ') : 'None';
+            const avgTemp = (27.5 + Math.random() * 5 - 2.5).toFixed(1) + '°C';
+            const avgHumidity = (67.5 + Math.random() * 5 - 2.5).toFixed(1) + '%';
+
+            const systemPrompt = "You are an AI Facility Manager. Your task is to generate a concise weekly operational summary for a cold storage facility. The report should be well-structured with markdown, including a title, a brief overview of the week, a summary of significant alerts, and the current equipment status. Conclude with an overall assessment of the system's health for the past week.";
+            const userPrompt = `Please generate the weekly operational report for the week ending on ${new Date().toDateString()}.\n- **Weekly Average Temperature:** ${avgTemp}\n- **Weekly Average Humidity:** ${avgHumidity}\n- **Significant Alerts This Week:**\n - ${alertsText}\n- **Current Equipment Status Snapshot:** See data below.\n\nBased on all this data and the following equipment snapshot, write the report:\n${equipmentStatus}`;
+            const report = await callGeminiAPI(userPrompt, systemPrompt);
+            modalTitle.textContent = '✨ Weekly Operational Report';
+            updateModalBody(report);
+        }
+        
+         async function getRoomAISummary(roomType, roomName) {
+            const aiContentDiv = document.getElementById('modalAIContent');
+            aiContentDiv.style.display = 'block';
+            aiContentDiv.innerHTML = '<div class="spinner"></div>';
+            document.getElementById('modalAIButton').style.display = 'none';
+
+            const temp = document.getElementById(`temp-${roomType}`)?.textContent || 'N/A';
+            const systemPrompt = "You are a succinct AI assistant for a cold storage facility. Provide a brief, one-paragraph summary of a room's status based on the data provided. Use a professional but clear tone.";
+            const userPrompt = `Provide a health summary for the "${roomName}". Its current temperature is ${temp}. Based on this, is the room operating normally? Are there any potential concerns a manager should be aware of?`;
+            const summary = await callGeminiAPI(userPrompt, systemPrompt);
+            aiContentDiv.innerHTML = `<p>${summary}</p>`;
+        }
+
+        // --- DASHBOARD INITIALIZATION & RENDERING ---
+        function initializeSimulatedClock() {
+            simulatedDate = new Date('2025-09-15T10:16:00');
+        }
+
+        function initializeDashboard() {
+            initializeSimulatedClock();
+            generateInitialEquipmentData();
+            initializeDatePickers();
+            renderGodownMap();
+
+            tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            humidityCtx = document.getElementById('humidityChart').getContext('2d');
+            
+            if (temperatureChart) temperatureChart.destroy();
+            if (humidityChart) humidityChart.destroy();
+            
+            const isDark = body.classList.contains('dark-mode');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+            const tickColor = isDark ? '#adb5bd' : '#6c757d';
+            const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tickColor }, grid: { display: false } }, y: { ticks: { color: tickColor }, grid: { color: gridColor } } }, elements: { line: { tension: 0.4 }, point: { radius: 0 } } };
+            
+            temperatureChart = new Chart(tempCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Temperature', data: [], borderColor: '#3B82F6', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, fill: true }] }, options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: 20, max: 35 } } } });
+            humidityChart = new Chart(humidityCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Humidity', data: [], borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)', borderWidth: 2, fill: true }] }, options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: 60, max: 75 } } } });
+            
+            updateChartTheme();
+            renderEquipment(); 
+            setupDateRangeListeners();
+            setViewMode('live');
+        }
+
+        function startDataSimulation() {
+            stopDataSimulation(); 
+            timeUpdateInterval = setInterval(updateTime, 1000); 
+            dataUpdateInterval = setInterval(updateData, 5000);
+            gasUpdateInterval = setInterval(updateGasSensors, 7000);
+            stackStatusUpdateInterval = setInterval(updateStackStatus, 10000);
+            equipmentUpdateInterval = setInterval(() => {
+                equipmentData.forEach(device => {
+                    if (Math.random() < 0.05) {
+                        const statuses = ['safe', 'warning', 'alert'], oldStatus = device.status, newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                        if (oldStatus !== newStatus) { 
+                            device.status = newStatus;
+                            const alertType = newStatus === 'safe' ? 'info' : newStatus;
+                            const statusText = getTranslatedText(`status${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`);
+                            addAlert(alertType, 'alert_status_change', { deviceName: device.name, status: statusText });
+                        }
+                    }
+                });
+                renderEquipment();
+            }, 15000);
+        }
+
+        function stopDataSimulation() {
+            clearInterval(timeUpdateInterval);
+            clearInterval(dataUpdateInterval);
+            clearInterval(gasUpdateInterval);
+            clearInterval(equipmentUpdateInterval);
+            clearInterval(stackStatusUpdateInterval);
+        }
+        
+        function renderEquipment() {
+            const grid = document.getElementById('devicesGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            equipmentData.forEach(device => {
+                const card = document.createElement('div');
+                card.className = `device-card device-${device.status}`;
+                const statusClass = `status-${device.status}`;
+                const statusText = getTranslatedText(`status${device.status.charAt(0).toUpperCase() + device.status.slice(1)}`);
+                card.innerHTML = `<div class="device-header"><div class="device-name">${device.name}</div><div class="device-status ${statusClass}">${statusText}</div></div><div class="device-metrics"><div class="metric"><div class="metric-value">${device.power}</div><div class="metric-label">${getTranslatedText('metricPower')}</div></div><div class="metric"><div class="metric-value">${device.efficiency}</div><div class="metric-label">${getTranslatedText('metricEfficiency')}</div></div><div class="metric"><div class="metric-value">${device.temperature}</div><div class="metric-label">${getTranslatedText('metricTemp')}</div></div><div class="metric"><div class="metric-value">${device.runtime}</div><div class="metric-label">${getTranslatedText('metricRuntime')}</div></div></div>`;
+                grid.appendChild(card);
+            });
+        }
+        
+        function updateTime() { 
+            if (simulatedDate) {
+                simulatedDate.setSeconds(simulatedDate.getSeconds() + 1);
+                const now = simulatedDate;
+                const locale = currentLanguage === 'hi' ? 'hi-IN' : 'en-US';
+                const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Kolkata' };
+                const dateOptions = { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' };
+                
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString(locale, timeOptions); 
+                document.getElementById('currentDate').textContent = now.toLocaleDateString(locale, dateOptions);
+            }
+        }
+        
+        function updateData() {
+            const newTemp = 27.5 + Math.random() * 5 - 2.5; // Range 25-30
+            const newHumidity = 67.5 + Math.random() * 5 - 2.5; // Range 65-70
+
+            document.getElementById('currentTemp').textContent = `${newTemp.toFixed(1)}°C`;
+            document.getElementById('currentHumidity').textContent = `${newHumidity.toFixed(1)}%`;
+            
+            document.getElementById('temp-hall_a').textContent = `${(newTemp + Math.random() * 2 - 1).toFixed(1)}°C`;
+            document.getElementById('temp-hall_b').textContent = `${(newTemp + Math.random() * 2 - 1).toFixed(1)}°C`;
+            document.getElementById('temp-loading').textContent = `${(15 + Math.random() * 4 - 2).toFixed(1)}°C`;
+            
+            const currentTime = simulatedDate ? simulatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (timeLabels.length >= 24) {
+                [timeLabels, tempData, humidityData].forEach(arr => { arr.shift(); });
+            }
+            timeLabels.push(currentTime); 
+            tempData.push(newTemp); 
+            humidityData.push(newHumidity);
+
+            if (temperatureChart) temperatureChart.update('none'); 
+            if (humidityChart) humidityChart.update('none');
+        }
+        
+        function updateGasSensors() {
+            const ammoniaLevel = Math.random() * 2, ethyleneLevel = Math.random() * 0.1, co2Level = 800 + Math.random() * 400;
+            document.getElementById('gas-ammonia').textContent = `${ammoniaLevel.toFixed(1)} PPM`;
+            document.getElementById('gas-ethylene').textContent = `${ethyleneLevel.toFixed(2)} PPM`;
+            document.getElementById('gas-co2').textContent = `${co2Level.toFixed(0)} PPM`;
+
+            const statusIndicator = document.getElementById('gas-status-indicator');
+            const isAlert = ammoniaLevel > 1.5 || ethyleneLevel > 0.05 || co2Level > 1500;
+
+            if (isAlert) {
+                statusIndicator.textContent = getTranslatedText('statusAlert');
+                statusIndicator.className = 'device-status status-alert';
+                if (!gasAlertTriggered) {
+                    let alertKey = 'alert_gas_high_co2'; // Default to CO2
+                    if(ammoniaLevel > 1.5) alertKey = 'alert_gas_high_nh3';
+                    if(ethyleneLevel > 0.05) alertKey = 'alert_gas_high_c2h4';
+                    addAlert('critical', alertKey, { deviceName: 'Atmosphere Sensor' });
+                    gasAlertTriggered = true;
+                }
+            } else {
+                statusIndicator.textContent = getTranslatedText('statusSafe');
+                statusIndicator.className = 'device-status status-safe';
+                if (gasAlertTriggered) {
+                    addAlert('info', 'alert_gas_normal', { deviceName: 'Atmosphere Sensor' });
+                    gasAlertTriggered = false;
+                }
+            }
+        }
+
+        // --- STACK MAP LOGIC ---
+        function renderGodownMap() {
+            const grid = document.getElementById('godown-map-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            stackStatusData = {};
+            stackIds = [];
+
+            const stackLayout = ['A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'B4'];
+
+            stackLayout.forEach(id => {
+                const stackId = `stack-${id}`;
+                const cell = document.createElement('div');
+                cell.className = 'godown-stack';
+                cell.id = stackId;
+                cell.textContent = id;
+                cell.onclick = () => showStackDetails(stackId);
+                grid.appendChild(cell);
+                stackStatusData[stackId] = { status: 'safe' };
+                stackIds.push(stackId);
+            });
+            
+            const legendContainer = document.querySelector('.godown-map-legend');
+            legendContainer.innerHTML = `
+                <div class="legend-item"><div class="legend-color" style="background: #28a745;"></div><span data-lang-key="legendSafe">Safe</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: #ffc107;"></div><span data-lang-key="legendWarning">Sprouting</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: #dc3545;"></div><span data-lang-key="legendAlert">Bad Condition</span></div>
+            `;
+            setLanguage(currentLanguage);
+        }
+
+        function updateStackStatus() {
+            const problemStacks = stackIds.filter(id => stackStatusData[id].status !== 'safe');
+            if (problemStacks.length > 0 && Math.random() < 0.2) {
+                const stackToClear = problemStacks[Math.floor(Math.random() * problemStacks.length)];
+                stackStatusData[stackToClear].status = 'safe';
+            }
+
+            const randomChance = Math.random();
+            if (randomChance < 0.15) {
+                const stackToFlag = stackIds[Math.floor(Math.random() * stackIds.length)];
+                
+                if (stackStatusData[stackToFlag].status === 'safe') {
+                     const stackName = stackToFlag.replace('stack-','').replace('-', '');
+                     if (randomChance < 0.05) { 
+                         stackStatusData[stackToFlag].status = 'alert';
+                         addAlert('critical', 'alert_gas_in_stack', { deviceName: `Stack ${stackName}` });
+                     } else {
+                         stackStatusData[stackToFlag].status = 'warning';
+                         addAlert('warning', 'alert_sprouting_detected', { deviceName: `Stack ${stackName}` });
+                     }
+                }
+            }
+            updateGodownMapView();
+        }
+
+        function updateGodownMapView() {
+            for (const stackId in stackStatusData) {
+                const cell = document.getElementById(stackId);
+                if (cell) {
+                    cell.classList.remove('stack-alert', 'stack-warning');
+                    if (stackStatusData[stackId].status === 'alert') {
+                        cell.classList.add('stack-alert');
+                    } else if (stackStatusData[stackId].status === 'warning') {
+                        cell.classList.add('stack-warning');
+                    }
+                }
+            }
+        }
+
+        function showStackDetails(stackId) {
+            const data = stackStatusData[stackId];
+            const stackName = stackId.replace('stack-', '').replace('-', '');
+            let content;
+            if (data.status === 'alert') {
+                content = `<strong>Status: <span style="color:#dc3545;">Bad Condition</span></strong><br>High concentration of ethylene gas detected. Recommend immediate inspection of onions in this stack for signs of spoilage and rot.`;
+            } else if (data.status === 'warning') {
+                content = `<strong>Status: <span style="color:#ffc107; color: #212529;">Sprouting</span></strong><br>Conditions may be favoring germination. Recommend checking humidity levels and physical inspection of this stack.`;
+            } else {
+                content = `<strong>Status: <span style="color:#28a745;">Safe</span></strong><br>Gas levels are normal. Conditions are optimal.`;
+            }
+            showModal(`Stack ${stackName} Details`, content);
+            document.getElementById('modalAIButton').style.display = 'none';
+        }
+
+
+        // --- HISTORICAL DATA LOGIC ---
+        function setupDateRangeListeners() {
+            document.getElementById('range-live').addEventListener('click', () => setViewMode('live'));
+            document.getElementById('range-7d').addEventListener('click', () => setViewMode('7d'));
+            document.getElementById('range-30d').addEventListener('click', () => setViewMode('30d'));
+            document.getElementById('range-go').addEventListener('click', () => {
+                const start = document.getElementById('start-date').value;
+                const end = document.getElementById('end-date').value;
+                if (start && end && new Date(start) <= new Date(end)) {
+                    setViewMode('custom', { start, end });
+                } else {
+                    showModal("Invalid Date Range", "<p>Please select a valid date range where the start date is not after the end date.</p>");
+                }
+            });
+        }
+
+        function initializeDatePickers() {
+            const today = new Date().toISOString().split('T')[0];
+            const startDate = document.getElementById('start-date');
+            const endDate = document.getElementById('end-date');
+            startDate.max = today;
+            endDate.max = today;
+        }
+
+        function setViewMode(mode, customRange = {}) {
+            stopDataSimulation();
+            document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+
+            if (mode === 'live') {
+                document.getElementById('range-live').classList.add('active');
+                displayLiveData();
+            } else {
+                let days;
+                if (mode === '7d') {
+                    days = 7;
+                    document.getElementById('range-7d').classList.add('active');
+                } else if (mode === '30d') {
+                    days = 30;
+                    document.getElementById('range-30d').classList.add('active');
+                }
+                displayHistoricalData(days, customRange);
+            }
+        }
+        
+        function displayLiveData() {
+            timeLabels.length = 0; tempData.length = 0; humidityData.length = 0;
+            const now = new Date();
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now - i * 60 * 60 * 1000);
+                timeLabels.push(time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                tempData.push(27.5 + Math.random() * 5 - 2.5);
+                humidityData.push(67.5 + Math.random() * 5 - 2.5);
+            }
+            updateAllCharts(timeLabels, tempData, humidityData);
+            
+            allHistoricalAlerts = [];
+            document.getElementById('alertsPanel').innerHTML = '';
+            addAlert('warning', 'alert_temp_rising', { deviceName: 'Storage Hall B' });
+            addAlert('info', 'alert_maintenance_done', { deviceName: 'Ventilation Unit 2' });
+            addAlert('critical', 'alert_power_spike', { deviceName: 'Backup Generator' });
+            
+            startDataSimulation();
+        }
+
+        function displayHistoricalData(days, customRange) {
+            let startDate, endDate = new Date();
+            if (days) {
+                startDate = new Date();
+                startDate.setDate(endDate.getDate() - days);
+            } else {
+                startDate = new Date(customRange.start);
+                endDate = new Date(customRange.end);
+                endDate.setHours(23, 59, 59, 999);
+                const diffTime = Math.abs(endDate - startDate);
+                days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            const histLabels = [], histTemp = [], histHum = [];
+            const pointCount = days * 24;
+            
+            for (let i = 0; i < pointCount; i++) {
+                const date = new Date(startDate.getTime() + i * 60 * 60 * 1000);
+                histLabels.push(date.toLocaleDateString([], { month: 'short', day: 'numeric'}) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit'}));
+                histTemp.push(27.5 + Math.random() * 8 - 4);
+                histHum.push(67.5 + Math.random() * 10 - 5);
+            }
+
+            updateAllCharts(histLabels, histTemp, histHum);
+            generateAndRenderHistoricalAlerts(startDate, endDate);
+        }
+
+        function updateAllCharts(labels, temp, hum) {
+            const charts = [temperatureChart, humidityChart];
+            const dataArrays = [temp, hum];
+            charts.forEach((chart, index) => {
+                if (chart) {
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = dataArrays[index];
+                    chart.update();
+                }
+            });
+        }
+        
+        function generateAndRenderHistoricalAlerts(startDate, endDate) {
+            allHistoricalAlerts = [];
+            const alertTypes = ['critical', 'warning', 'info'];
+            const deviceNames = ['Ventilation Unit 1', 'Generator A', 'Exhaust Fan 5', 'Storage Hall A', 'Storage Hall B'];
+            const messageKeys = ['alert_temp_rising', 'alert_power_spike', 'alert_status_change', 'alert_maintenance_done'];
+            const numAlerts = Math.floor(Math.random() * 5 * ( (endDate-startDate) / (1000*60*60*24) ));
+
+            for (let i = 0; i < numAlerts; i++) {
+                const randomTimestamp = new Date(startDate.getTime() + Math.random() * (endDate.getTime() - startDate.getTime()));
+                allHistoricalAlerts.push({
+                    type: alertTypes[Math.floor(Math.random() * alertTypes.length)],
+                    messageKey: messageKeys[Math.floor(Math.random() * messageKeys.length)],
+                    context: { deviceName: deviceNames[Math.floor(Math.random() * deviceNames.length)], status: 'Alert' },
+                    timestamp: randomTimestamp,
+                });
+            }
+            allHistoricalAlerts.sort((a, b) => b.timestamp - a.timestamp);
+            renderAlerts(allHistoricalAlerts);
+        }
+
+        // --- MODAL & UI LOGIC ---
+        function showModal(title, bodyContent) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = bodyContent;
+            document.getElementById('modalAIContent').style.display = 'none';
+            document.getElementById('modalAIButton').style.display = 'none';
+            infoModal.classList.add('visible');
+        }
+
+        function showRoomDetails(title, roomType) {
+            const roomDetails = {
+                hall_a: "Target 25-30°C, 65-70% RH. Conditions are currently optimal for onion curing.",
+                hall_b: "Target 25-30°C, 65-70% RH. Minor temperature fluctuations detected.",
+                loading: "Ambient temperature. Normal operations in progress.",
+                control: "Climate controlled. All systems operational."
+            };
+            const modalAIBtn = document.getElementById('modalAIButton');
+            modalTitle.textContent = title;
+            modalBody.innerHTML = `<p>${roomDetails[roomType]}</p>`;
+            document.getElementById('modalAIContent').innerHTML = '';
+            modalAIBtn.style.display = 'inline-block';
+            modalAIBtn.onclick = () => getRoomAISummary(roomType, title);
+            infoModal.classList.add('visible');
+        }
+
+        function updateModalBody(content) {
+            const formattedContent = content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/### (.*?)(?:\n|$)/g, '<h3>$1</h3>').replace(/## (.*?)(?:\n|$)/g, '<h2>$1</h2>').replace(/# (.*?)(?:\n|$)/g, '<h1>$1</h1>').replace(/^- (.*?)(?:\n|$)/gm, '<li>$1</li>').replace(/^\* (.*?)(?:\n|$)/gm, '<li>$1</li>').replace(/(\n<\/li>)/g, '</li>').replace(/(<\/li><li>)/g, '</li>\n<li>').replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>').replace(/<\/ul>\s*<ul>/g, '');
+            modalBody.innerHTML = formattedContent;
+        }
+
+        function closeModal() {
+            infoModal.classList.remove('visible');
+            document.getElementById('modalAIContent').style.display = 'none';
+        }
+        
+        function addAlert(type, messageKey, context = {}) {
+            const newAlert = {
+                type,
+                messageKey,
+                context,
+                timestamp: new Date()
+            };
+            allHistoricalAlerts.unshift(newAlert);
+            if (allHistoricalAlerts.length > 100) {
+                allHistoricalAlerts.pop();
+            }
+            renderAlerts(allHistoricalAlerts.slice(0, 20));
+        }
+
+        function renderAlerts(alerts) {
+             const panel = document.getElementById('alertsPanel');
+             if (!panel) return;
+             panel.innerHTML = '';
+             alerts.forEach(alertData => {
+                 const alertItem = document.createElement('div');
+                 alertItem.className = `alert-item alert-${alertData.type}`;
+                 alertItem.id = `alert-${alertData.timestamp.toISOString()}`;
+                 alertItem.dataset.type = alertData.type;
+                 alertItem.dataset.messageKey = alertData.messageKey;
+                 alertItem.dataset.context = JSON.stringify(alertData.context);
+                 alertItem.dataset.timestamp = alertData.timestamp.toISOString();
+
+                 const time = new Date(alertData.timestamp).toLocaleString();
+                 const message = getTranslatedText(alertData.messageKey, alertData.context);
+                 const analyzeText = getTranslatedText('analyze');
+                 const safeDeviceName = alertData.context.deviceName ? alertData.context.deviceName.replace(/'/g, "\\'") : '';
+                 const safeMessage = message.replace(/'/g, "\\'");
+                
+                 alertItem.innerHTML = `
+                     <div class="alert-content">
+                         <div class="alert-time">${time}</div>
+                         <div>${message}</div>
+                     </div>
+                     <div class="alert-actions">
+                         <button class="gemini-btn" style="padding: 6px 12px; font-size: 0.8em;" onclick="analyzeAlert('${safeDeviceName}', '${safeMessage}')">${analyzeText}</button>
+                         <button class="alert-delete-btn" onclick="deleteAlert('${alertData.timestamp.toISOString()}')" title="Delete Alert">&times;</button>
+                     </div>`;
+                 panel.appendChild(alertItem);
+             });
+        }
+
+        function deleteAlert(timestampISO) {
+            const alertElement = document.getElementById(`alert-${timestampISO}`);
+            if (alertElement) {
+                alertElement.style.opacity = '0';
+                alertElement.style.transform = 'translateX(50px)';
+                setTimeout(() => {
+                    alertElement.remove();
+                }, 300);
+            }
+            allHistoricalAlerts = allHistoricalAlerts.filter(alert => alert.timestamp.toISOString() !== timestampISO);
+        }
+
+        // --- MAIN EXECUTION LOGIC ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Assign all DOM element variables
+            loginContainer = document.getElementById('login-container');
+            dashboardContainer = document.getElementById('dashboard-container');
+            loginError = document.getElementById('login-error');
+            infoModal = document.getElementById('infoModal');
+            modalTitle = document.getElementById('modalTitle');
+            modalBody = document.getElementById('modalBody');
+            body = document.body;
+            
+            const themeToggle = document.getElementById('theme-toggle');
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = document.getElementById('logout-btn-ui');
+            const passwordInput = document.getElementById('password');
+            const showRegisterBtn = document.getElementById('show-register');
+            const showLoginBtn = document.getElementById('show-login');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const registrationForm = document.getElementById('registration-form');
+
+            // Attach all event listeners
+            if (showRegisterBtn) {
+                showRegisterBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    loginForm.style.display = 'none';
+                    registerForm.style.display = 'block';
+                });
+            }
+            
+            if (showLoginBtn) {
+                showLoginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    registerForm.style.display = 'none';
+                    loginForm.style.display = 'block';
+                });
+            }
+            
+            if (registrationForm) {
+                registrationForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    handleRegistration();
+                });
+            }
+
+            themeToggle.addEventListener('click', () => {
+                body.classList.toggle('dark-mode');
+                const isDarkMode = body.classList.contains('dark-mode');
+                themeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                updateChartTheme();
+            });
+
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            passwordInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleLogin(); });
+
+            document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+            document.getElementById('lang-hi').addEventListener('click', () => setLanguage('hi'));
+
+            // Run initial setup
+            applyInitialSettings();
+        });
+
+    </script>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Champapur Cold Storage</h3>
+                    <p>Advanced monitoring and management systems for optimal onion cold storage operations.</p>
+                    <div class="footer-logo">
+                        <span class="logo-icon">❄️</span>
+                        <span>Champapur Cold Storage</span>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Contact Us</h4>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <span class="contact-icon">📍</span>
+                            <span>NH28, Champapur, Bihar, India</span>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">📞</span>
+                            <a href="tel:+1234567890">+91 91234 56789</a>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">✉️</span>
+                            <a href="mailto:info@champapurcs.com">info@champapurcs.com</a>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">🌐</span>
+                            <a href="#" target="_blank">www.champapurcs.com</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Dashboard</a></li>
+                        <li><a href="#">Monitoring</a></li>
+                        <li><a href="#">Analytics</a></li>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Documentation</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#" target="_blank" class="social-link">
+                            <span class="social-icon"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/facebook.svg" alt="Facebook"></span>
+                            <span>Facebook</span>
+                        </a>
+                        <a href="#" target="_blank" class="social-link">
+                            <span class="social-icon"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/twitter.svg" alt="Twitter"></span>
+                            <span>Twitter</span>
+                        </a>
+                        <a href="#" target="_blank" class="social-link">
+                            <span class="social-icon"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg" alt="LinkedIn"></span>
+                            <span>LinkedIn</span>
+                        </a>
+                        <a href="#" target="_blank" class="social-link">
+                            <span class="social-icon"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/instagram.svg" alt="Instagram"></span>
+                            <span>Instagram</span>
+                        </a>
+                        <a href="#" target="_blank" class="social-link">
+                            <span class="social-icon"><img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtube.svg" alt="YouTube"></span>
+                            <span>YouTube</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2025 Champapur Cold Storage. All rights reserved.</p>
+                    <div class="footer-bottom-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Cookie Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
+
